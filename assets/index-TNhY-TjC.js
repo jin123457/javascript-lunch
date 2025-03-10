@@ -35,90 +35,154 @@
     fetch(link.href, fetchOpts);
   }
 })();
-const $header = (HEADER_INFO) => {
+const $headerTitle = ({ title }) => {
+  const headerTitle = document.createElement("h1");
+  headerTitle.classList.add("gnb__title", "text-title");
+  headerTitle.textContent = title;
+  return headerTitle;
+};
+const $headerModalButton = ({ buttonImage, buttonTitle }) => {
+  const modalButton = document.createElement("button");
+  modalButton.type = "button";
+  modalButton.classList.add("gnb__button");
+  modalButton.ariaLabel = buttonTitle;
+  const modalButtonImage = document.createElement("img");
+  modalButtonImage.src = buttonImage;
+  modalButtonImage.alt = buttonTitle;
+  modalButton.appendChild(modalButtonImage);
+  return modalButton;
+};
+const $header = (headerInfo) => {
   const header = document.createElement("header");
   header.classList.add("gnb");
-  header.innerHTML += `<h1 class="gnb__title text-title">${HEADER_INFO.title}</h1>`;
-  header.innerHTML += `<button type="button" class="gnb__button" aria-label="${HEADER_INFO.buttonTitle}">
-      <img src="${HEADER_INFO.buttonImage}" alt="${HEADER_INFO.buttonTitle}">
-    </button>`;
+  header.appendChild($headerTitle(headerInfo));
+  header.appendChild($headerModalButton(headerInfo));
   return header;
 };
-const $restaurantItem = (RESTAURANT_INFO) => {
+const $restaurantCategory = ({ categoryIcon, categoryTitle }) => {
+  const category = document.createElement("div");
+  category.classList.add("restaurant__category");
+  const categoryImage = document.createElement("img");
+  categoryImage.src = categoryIcon;
+  categoryImage.alt = categoryTitle;
+  categoryImage.classList.add("category-icon");
+  category.appendChild(categoryImage);
+  return category;
+};
+const $restaurantInfo = ({ name, distance, description }) => {
+  const info = document.createElement("div");
+  info.classList.add("restaurant__info");
+  const InfoName = document.createElement("h3");
+  InfoName.classList.add("restaurant__name", "text-subtitle");
+  InfoName.textContent = name;
+  info.appendChild(InfoName);
+  const InfoDistance = document.createElement("span");
+  InfoDistance.classList.add("restaurant__distance", "text-body");
+  InfoDistance.textContent = distance;
+  info.appendChild(InfoDistance);
+  const InfoDescription = document.createElement("p");
+  InfoDescription.classList.add("restaurant__description", "text-body");
+  InfoDescription.textContent = description;
+  info.appendChild(InfoDescription);
+  return info;
+};
+const $restaurantItem = (restaurantInfo) => {
   const restaurantItem = document.createElement("li");
   restaurantItem.classList.add("restaurant");
-  restaurantItem.innerHTML += `<div class="restaurant__category">
-            <img src="${RESTAURANT_INFO.categoryIcon}" alt="${RESTAURANT_INFO.categoryTitle}" class="category-icon">
-          </div>`;
-  restaurantItem.innerHTML += `<div class="restaurant__info">
-            <h3 class="restaurant__name text-subtitle">${RESTAURANT_INFO.name}</h3>
-            <span class="restaurant__distance text-body">${RESTAURANT_INFO.distance}</span>
-            <p class="restaurant__description text-body">${RESTAURANT_INFO.description}</p>
-          </div>`;
+  restaurantItem.appendChild($restaurantCategory(restaurantInfo));
+  restaurantItem.appendChild($restaurantInfo(restaurantInfo));
   return restaurantItem;
+};
+const $inputItemLabel = ({ attribute, label }) => {
+  const itemLabel = document.createElement("label");
+  itemLabel.classList.add("text-caption");
+  itemLabel.htmlFor = attribute.id;
+  itemLabel.textContent = label;
+  return itemLabel;
+};
+const $inputItemHelperText = ({ helperText }) => {
+  const itemHelperText = document.createElement("span");
+  itemHelperText.classList.add("help-text", "text-caption");
+  itemHelperText.textContent = helperText;
+  return itemHelperText;
 };
 const $inputItem = (fieldType, fieldName) => {
   const wrapper = document.createElement("div");
   wrapper.classList.add("form-item");
-  if (fieldType[fieldName].attribute.required)
+  if (fieldType[fieldName].attribute.required) {
     wrapper.classList.add("form-item--required");
-  const label = document.createElement("label");
-  label.htmlFor = `${fieldType[fieldName].attribute.id} text-caption`;
-  label.innerText = fieldType[fieldName].label;
-  wrapper.appendChild(label);
+  }
+  wrapper.appendChild($inputItemLabel(fieldType[fieldName]));
   wrapper.appendChild(fieldType.create(fieldType[fieldName]));
   if (fieldType[fieldName].helperText) {
-    const helperText = document.createElement("span");
-    helperText.classList.add("help-text", "text-caption");
-    helperText.innerText = fieldType[fieldName].helperText;
-    wrapper.appendChild(helperText);
+    wrapper.appendChild($inputItemHelperText(fieldType[fieldName]));
   }
   return wrapper;
 };
-const handleAddRestaurant = (e) => {
-  e.preventDefault();
-  try {
-    const form = document.getElementById("add-restaurant-form");
-    const formData = new FormData(form);
-    const data = Object.fromEntries(formData);
-    validateForm(form);
-    addRestaurant(data);
-  } catch (error) {
-    alert(error.message);
-  }
-};
-const validateForm = (form) => {
-  const requiredFields = form.querySelectorAll(
-    "input[required], select[required], textarea[required]"
-  );
-  requiredFields.forEach((requiredField) => {
-    if (!requiredField.value.trim()) {
-      const labelText = document.querySelector(
-        `label[for="${requiredField.id} text-caption"]`
-      ).innerText;
-      throw new Error(`${labelText}(은)는 필수 값입니다.`);
-    }
-  });
-};
-const $form = (formFields) => {
+const $form = (formFields, { eventType, eventHandler }) => {
   const form = document.createElement("form");
   form.id = "add-restaurant-form";
   formFields.forEach((field) => {
     form.appendChild(field);
   });
-  form.addEventListener("submit", handleAddRestaurant);
+  form.addEventListener(eventType, eventHandler);
   return form;
 };
-const CATEGORY_ICON = {
+const deepFreeze = (object) => {
+  const propNames = Object.getOwnPropertyNames(object);
+  for (let name of propNames) {
+    const value = object[name];
+    object[name] = value && typeof value === "object" ? deepFreeze(value) : value;
+  }
+  return Object.freeze(object);
+};
+const CATEGORY_ICON = deepFreeze({
   한식: "images/category-korean.png",
   중식: "images/category-chinese.png",
   일식: "images/category-japanese.png",
   양식: "images/category-western.png",
   아시안: "images/category-asian.png",
   기타: "images/category-etc.png"
+});
+const ERROR = deepFreeze({
+  INVALID_REQUIRED: "(은)는 필수 값입니다.",
+  INVALID_URL: "유효한 URL이 아닙니다."
+});
+const isValidUrl = (url) => {
+  const pattern = new RegExp(
+    "^([a-zA-Z]+:\\/\\/)?((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|((\\d{1,3}\\.){3}\\d{1,3}))(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*(\\?[;&a-z\\d%_.~+=-]*)?(\\#[-a-z\\d_]*)?$",
+    "i"
+  );
+  return pattern.test(url);
+};
+const validateRestaurantForm = (form) => {
+  if (!form.category.value) {
+    const categoryLabelText = document.querySelector(
+      `label[for="category"]`
+    ).textContent;
+    throw new Error(`${categoryLabelText}${ERROR.INVALID_REQUIRED}`);
+  }
+  if (!form.name.value) {
+    const nameLabelText = document.querySelector(`label[for="name"]`).textContent;
+    throw new Error(`${nameLabelText}${ERROR.INVALID_REQUIRED}`);
+  }
+  if (!form.distance.value) {
+    const distanceLabelText = document.querySelector(
+      `label[for="distance"]`
+    ).textContent;
+    throw new Error(`${distanceLabelText}${ERROR.INVALID_REQUIRED}`);
+  }
+  if (form.link.value && !isValidUrl(form.link.value)) {
+    document.querySelector(`label[for="link"]`).textContent;
+    throw new Error(ERROR.INVALID_URL);
+  }
+};
+const restaurantFormReset = () => {
+  handleModalClose();
+  const form = document.getElementById("add-restaurant-form");
+  form.reset();
 };
 const addRestaurant = (data) => {
-  handleModalClose();
   const categoryIcon = CATEGORY_ICON[data.category];
   const newRestaurant = {
     categoryIcon,
@@ -129,8 +193,32 @@ const addRestaurant = (data) => {
   };
   document.querySelector(".restaurant-list").appendChild($restaurantItem(newRestaurant));
 };
+const handleAddRestaurant = (e) => {
+  e.preventDefault();
+  try {
+    const form = document.getElementById("add-restaurant-form");
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData);
+    validateRestaurantForm(form);
+    addRestaurant(data);
+    restaurantFormReset(form);
+  } catch (error) {
+    alert(error.message);
+  }
+};
+const FORM_EVENT = {
+  addRestaurant: {
+    eventType: "submit",
+    eventHandler: handleAddRestaurant
+  }
+};
 const handleModalClose = () => {
   document.querySelector(".modal").classList.remove("modal--open");
+};
+const handleModalCloseEsc = (e) => {
+  if (e.key === "Escape") {
+    handleModalClose();
+  }
 };
 const handleModalOpen = () => {
   document.querySelector(".modal").classList.add("modal--open");
@@ -145,24 +233,21 @@ const $modal = (form) => {
   container.classList.add("modal-container");
   const title = document.createElement("h2");
   title.classList.add("modal-title", "text-title");
-  title.innerText = "새로운 음식점";
+  title.textContent = "새로운 음식점";
   container.appendChild(title);
-  container.appendChild($form(form));
+  container.appendChild($form(form, FORM_EVENT.addRestaurant));
   wrapper.appendChild(container);
-  document.addEventListener("keydown", (e) => {
-    e.key === "Escape" && handleModalClose();
-  });
+  document.addEventListener("keydown", handleModalCloseEsc);
   background.addEventListener("click", handleModalClose);
   document.querySelector(".gnb__button").addEventListener("click", handleModalOpen);
   return wrapper;
 };
-const $button = (BUTTON_INFO) => {
+const $button = ({ attribute, text, eventType, event }) => {
   const button = document.createElement("button");
-  button.innerText = BUTTON_INFO.text;
-  button.type = BUTTON_INFO.type;
-  button.classList.add(...BUTTON_INFO.className);
-  if (BUTTON_INFO.event) {
-    button.addEventListener("click", BUTTON_INFO.event);
+  Object.assign(button, attribute);
+  button.textContent = text;
+  if (eventType && event) {
+    button.addEventListener(eventType, event);
   }
   return button;
 };
@@ -174,31 +259,33 @@ const $buttonContainer = (buttons) => {
   });
   return container;
 };
-const UI_CONFIG = Object.freeze({
-  HEADER: Object.freeze({
+const UI_CONFIG = deepFreeze({
+  HEADER: {
     title: "점심 뭐 먹지",
     buttonTitle: "음식점 추가",
     buttonImage: "images/add-button.png"
-  }),
-  BUTTONS: Object.freeze({
+  },
+  BUTTONS: {
     CANCEL: {
       text: "취소하기",
-      type: "button",
-      event: handleModalClose,
-      className: [
-        "button",
-        "button--secondary",
-        "text-caption",
-        "cancel-button"
-      ]
+      eventType: "click",
+      event: restaurantFormReset,
+      attribute: {
+        type: "button",
+        className: "button button--secondary text-caption cancel-button"
+      }
     },
     ADD: {
       text: "추가하기",
-      type: "submit",
       event: handleAddRestaurant,
-      className: ["button", "button--primary", "text-caption", "add-button"]
+      attribute: {
+        id: "addRestaurantButton",
+        type: "submit",
+        disabled: true,
+        className: "button button--primary text-caption add-button button--disabled"
+      }
     }
-  })
+  }
 });
 const restaurantData = [
   {
@@ -244,25 +331,31 @@ const restaurantData = [
     description: "멕시칸 캐주얼 그릴"
   }
 ];
-const $select = (selectInfo) => {
+const $select = ({ attribute, options, eventType, event }) => {
   const select = document.createElement("select");
-  Object.assign(select, selectInfo.attribute);
-  Object.keys(selectInfo.options).forEach((selectName) => {
+  Object.assign(select, attribute);
+  Object.keys(options).forEach((selectName) => {
     const option = document.createElement("option");
-    option.value = selectInfo.options[selectName];
+    option.value = options[selectName];
     option.textContent = selectName;
     select.appendChild(option);
   });
+  if (eventType && event) {
+    select.addEventListener(eventType, event);
+  }
   return select;
 };
-const $input = (inputInfo) => {
+const $input = ({ attribute, eventType, event }) => {
   const input = document.createElement("input");
-  Object.assign(input, inputInfo.attribute);
+  Object.assign(input, attribute);
+  if (eventType && event) {
+    input.addEventListener(eventType, event);
+  }
   return input;
 };
-const $textarea = (textareaInfo) => {
+const $textarea = ({ attribute }) => {
   const textarea = document.createElement("textarea");
-  Object.assign(textarea, textareaInfo.attribute);
+  Object.assign(textarea, attribute);
   return textarea;
 };
 const categoryOptions = {
@@ -282,10 +375,25 @@ const distanceOptions = {
   "20분 이내": 20,
   "30분 이내": 30
 };
-const FORM_FIELDS = Object.freeze({
-  INPUTS: Object.freeze({
+const senseChangeRestaurantFormValue = () => {
+  try {
+    const form = document.getElementById("add-restaurant-form");
+    validateRestaurantForm(form);
+    const submitButton = document.getElementById("addRestaurantButton");
+    submitButton.classList.remove("button--disabled");
+    submitButton.disabled = false;
+  } catch (error) {
+    const submitButton = document.getElementById("addRestaurantButton");
+    submitButton.classList.add("button--disabled");
+    submitButton.disabled = true;
+  }
+};
+const FORM_FIELDS = deepFreeze({
+  INPUTS: {
     name: {
       label: "이름",
+      eventType: "input",
+      event: senseChangeRestaurantFormValue,
       attribute: {
         required: true,
         id: "name",
@@ -297,6 +405,8 @@ const FORM_FIELDS = Object.freeze({
     },
     link: {
       label: "참고 링크",
+      eventType: "input",
+      event: senseChangeRestaurantFormValue,
       attribute: {
         id: "link",
         name: "link",
@@ -306,11 +416,13 @@ const FORM_FIELDS = Object.freeze({
       }
     },
     create: (info) => $input(info)
-  }),
-  SELECTS: Object.freeze({
+  },
+  SELECTS: {
     category: {
       label: "카테고리",
       options: categoryOptions,
+      eventType: "change",
+      event: senseChangeRestaurantFormValue,
       attribute: {
         required: true,
         id: "category",
@@ -320,6 +432,8 @@ const FORM_FIELDS = Object.freeze({
     distance: {
       label: "거리(도보 이동 시간)",
       options: distanceOptions,
+      eventType: "change",
+      event: senseChangeRestaurantFormValue,
       attribute: {
         required: true,
         id: "distance",
@@ -327,8 +441,8 @@ const FORM_FIELDS = Object.freeze({
       }
     },
     create: (info) => $select(info)
-  }),
-  TEXTAREAS: Object.freeze({
+  },
+  TEXTAREAS: {
     description: {
       label: "설명",
       helperText: "메뉴 등 추가 정보를 입력해 주세요.",
@@ -342,7 +456,7 @@ const FORM_FIELDS = Object.freeze({
       }
     },
     create: (info) => $textarea(info)
-  })
+  }
 });
 addEventListener("load", () => {
   document.body.prepend($header(UI_CONFIG.HEADER));

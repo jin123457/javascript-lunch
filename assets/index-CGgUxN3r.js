@@ -162,7 +162,7 @@ const validateRestaurantForm = (form) => {
     ).textContent;
     throw new Error(`${categoryLabelText}${ERROR.INVALID_REQUIRED}`);
   }
-  if (!form.name.value) {
+  if (!form.name.value.trim()) {
     const nameLabelText = document.querySelector(`label[for="name"]`).textContent;
     throw new Error(`${nameLabelText}${ERROR.INVALID_REQUIRED}`);
   }

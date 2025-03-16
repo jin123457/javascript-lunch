@@ -15,6 +15,14 @@ body {
   font-size: 16px;
 }
 
+main {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  padding: 1rem 0 0 0;
+  height: calc(100vh - 64px);
+}
+
 /* Colors *****************************************/
 :root {
   --primary-color: #ec4a0a;
@@ -105,6 +113,8 @@ body {
   background: transparent;
 
   font-size: 16px;
+
+  cursor: pointer;
 }
 
 .restaurant-filter {
@@ -115,9 +125,12 @@ body {
 .restaurant-list-container {
   display: flex;
   flex-direction: column;
+  flex: 1;
 
   padding: 0 16px;
   margin: 16px 0;
+
+  overflow-y: scroll;
 }
 
 .restaurant {
@@ -127,6 +140,21 @@ body {
   padding: 16px 8px;
 
   border-bottom: 1px solid #e9eaed;
+
+  position: relative;
+
+  cursor: pointer;
+}
+
+svg.favorite-icon {
+  width: 28px;
+  height: 26px;
+
+  position: absolute;
+  right: 10px;
+  top: 10px;
+
+  cursor: pointer;
 }
 
 .restaurant__category {
@@ -208,11 +236,29 @@ body {
   margin-bottom: 36px;
 }
 
+.modal-container > .restaurant__name {
+  margin: 10px 0;
+}
+
+.modal-container > .text-body {
+  margin: 5px 0;
+}
+
+.modal-container > .restaurant__description {
+  -webkit-line-clamp: none;
+}
+
+.modal-container > a {
+  display: flex;
+
+  margin: 10px 0;
+}
+
 .form-item {
   display: flex;
   flex-direction: column;
 
-  margin-bottom: 36px;
+  margin-bottom: 16px;
 }
 
 .form-item label {
@@ -303,4 +349,68 @@ input[name="link"] {
   color: var(--grey-100);
 
   cursor: not-allowed;
+}
+
+.tab-container {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+
+  padding: 0 1rem;
+
+  position: relative;
+}
+
+.tab-container::before {
+  content: "";
+
+  width: 95%;
+  height: 2px;
+
+  background-color: var(--grey-200);
+
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+
+  transform: translateX(-50%);
+
+  border-radius: 10px;
+}
+
+.tab-container button {
+  border: none;
+
+  margin: 0;
+
+  font-size: 16px;
+  line-height: 22px;
+}
+
+.tab-container button.select-tab-active {
+  position: relative;
+
+  color: var(--primary-color);
+  border-bottom: 3px solid #ec4a0a;
+
+  border-radius: 0;
+}
+
+.no-restaurant {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  flex-grow: 1;
+}
+
+.no-restaurant i {
+  font-size: 3rem;
+  font-style: normal;
+
+  margin-bottom: 1rem;
+}
+
+.no-restaurant b {
+  font-size: 1.2rem;
 }

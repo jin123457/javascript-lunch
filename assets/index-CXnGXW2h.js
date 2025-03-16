@@ -417,33 +417,6 @@ const $restaurantItem = (restaurantInfo) => {
   restaurantItem.appendChild(favoriteIcon);
   return restaurantItem;
 };
-const $select = ({ attribute, options, eventType, event }) => {
-  const select = document.createElement("select");
-  Object.assign(select, attribute);
-  Object.keys(options).forEach((selectName) => {
-    const option = document.createElement("option");
-    option.value = options[selectName];
-    option.textContent = selectName;
-    select.appendChild(option);
-  });
-  if (eventType && event) {
-    select.addEventListener(eventType, event);
-  }
-  return select;
-};
-const $input = ({ attribute, eventType, event }) => {
-  const input = document.createElement("input");
-  Object.assign(input, attribute);
-  if (eventType && event) {
-    input.addEventListener(eventType, event);
-  }
-  return input;
-};
-const $textarea = ({ attribute }) => {
-  const textarea = document.createElement("textarea");
-  Object.assign(textarea, attribute);
-  return textarea;
-};
 const $restaurantList = (restaurantItems) => {
   if (restaurantItems.length > 0) {
     const restaurantList = document.createElement("ul");
@@ -477,6 +450,33 @@ const $createRestaurantList = () => {
     document.querySelector(".select-tab-active").id
   );
   restaurantContainer.appendChild($restaurantList(restaurantItems));
+};
+const $select = ({ attribute, options, eventType, event }) => {
+  const select = document.createElement("select");
+  Object.assign(select, attribute);
+  Object.keys(options).forEach((selectName) => {
+    const option = document.createElement("option");
+    option.value = options[selectName];
+    option.textContent = selectName;
+    select.appendChild(option);
+  });
+  if (eventType && event) {
+    select.addEventListener(eventType, event);
+  }
+  return select;
+};
+const $input = ({ attribute, eventType, event }) => {
+  const input = document.createElement("input");
+  Object.assign(input, attribute);
+  if (eventType && event) {
+    input.addEventListener(eventType, event);
+  }
+  return input;
+};
+const $textarea = ({ attribute }) => {
+  const textarea = document.createElement("textarea");
+  Object.assign(textarea, attribute);
+  return textarea;
 };
 const categoryOptions = {
   "선택해 주세요": "",
@@ -663,11 +663,9 @@ const addRestaurant = (data) => {
     id: /* @__PURE__ */ new Date(),
     isFavorite: false
   };
-  document.querySelector(".restaurant-list").prepend($restaurantItem(newRestaurant));
   const currentItem = storageHandler.getItem(STORAGE_KEY_NAME);
   storageHandler.setItem(STORAGE_KEY_NAME, [...currentItem, newRestaurant]);
-  const noRestaurant = document.getElementById("noRestaurant");
-  if (noRestaurant) noRestaurant.remove();
+  $createRestaurantList();
 };
 const handleAddRestaurant = (e) => {
   e.preventDefault();

@@ -650,6 +650,16 @@ const restaurantFormReset = () => {
   );
   form.reset();
 };
+const changeFilterSelect = (category) => {
+  const categorySelect = document.getElementById(
+    "category-filter"
+  );
+  if (categorySelect.value !== "") categorySelect.value = category;
+  const sortSelect = document.getElementById(
+    "sorting-filter"
+  );
+  sortSelect.value = "";
+};
 const addRestaurant = ({
   category,
   name,
@@ -679,6 +689,7 @@ const handleAddRestaurant = (e) => {
     const formData = new FormData(form);
     const data = Object.fromEntries(formData);
     validateRestaurantForm(form);
+    changeFilterSelect(data.category);
     addRestaurant(data);
     restaurantFormReset();
   } catch (error) {

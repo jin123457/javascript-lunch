@@ -35,9 +35,9 @@
     fetch(link.href, fetchOpts);
   }
 })();
-const $button = (buttonInfo, buttonEvent = {}) => {
+const $button = (buttonInfo, buttonEvent) => {
   const { attribute, text } = buttonInfo;
-  const { eventType, eventHandler } = buttonEvent;
+  const { eventType, eventHandler } = buttonEvent ?? {};
   const button = document.createElement("button");
   Object.assign(button, attribute);
   button.textContent = text;
@@ -61,7 +61,7 @@ const $inputItemLabel = ({ attribute, label }) => {
   itemLabel.textContent = label;
   return itemLabel;
 };
-const $inputItemHelperText = ({ helperText }) => {
+const $inputItemHelperText = (helperText) => {
   const itemHelperText = document.createElement("span");
   itemHelperText.classList.add("help-text", "text-caption");
   itemHelperText.textContent = helperText;
@@ -76,7 +76,7 @@ const $inputItem = (fieldType, fieldName) => {
   wrapper.appendChild($inputItemLabel(fieldType[fieldName]));
   wrapper.appendChild(fieldType.create(fieldType[fieldName]));
   if (fieldType[fieldName].helperText) {
-    wrapper.appendChild($inputItemHelperText(fieldType[fieldName]));
+    wrapper.appendChild($inputItemHelperText(fieldType[fieldName].helperText));
   }
   return wrapper;
 };
@@ -92,15 +92,7 @@ const $form = (formFields, formEvent) => {
   }
   return form;
 };
-const deepFreeze = (object) => {
-  const propNames = Object.getOwnPropertyNames(object);
-  for (let name of propNames) {
-    const value = object[name];
-    object[name] = value && typeof value === "object" ? deepFreeze(value) : value;
-  }
-  return Object.freeze(object);
-};
-const UI_CONFIG = deepFreeze({
+const UI_CONFIG = {
   HEADER: {
     title: "점심 뭐 먹지",
     buttonTitle: "음식점 추가",
@@ -143,8 +135,6 @@ const UI_CONFIG = deepFreeze({
     },
     DELETE: {
       text: "삭제하기",
-      eventType: "click",
-      event: null,
       attribute: {
         id: "deleteRestaurantButton",
         type: "button",
@@ -160,9 +150,10 @@ const UI_CONFIG = deepFreeze({
       }
     }
   }
-});
+};
 const handleModalClose = () => {
-  document.querySelector(".modal").classList.remove("modal--open");
+  var _a;
+  (_a = document.querySelector(".modal")) == null ? void 0 : _a.classList.remove("modal--open");
 };
 const handleModalCloseEsc = (e) => {
   if (e.key === "Escape") {
@@ -170,9 +161,10 @@ const handleModalCloseEsc = (e) => {
   }
 };
 const handleModalOpen = () => {
-  document.querySelector(".modal").classList.add("modal--open");
+  var _a;
+  (_a = document.querySelector(".modal")) == null ? void 0 : _a.classList.add("modal--open");
 };
-const $modal = (type, id = "") => {
+const $modal = () => {
   const wrapper = document.createElement("div");
   wrapper.classList.add("modal");
   const background = document.createElement("div");
@@ -186,24 +178,26 @@ const $modal = (type, id = "") => {
   return wrapper;
 };
 const storageHandler = {
-  getItem: (data) => JSON.parse(localStorage.getItem(data) ?? "[]") || [],
-  setItem: (key, value) => localStorage.setItem(key, JSON.stringify(value)),
-  deleteItem: (key, value) => {
-    const newData = storageHandler.getItem(key).filter((item) => item.id !== value);
-    storageHandler.setItem(key, newData);
+  getItem: (storageKey) => JSON.parse(localStorage.getItem(storageKey) ?? "[]") || [],
+  setItem: (storageKey, value) => localStorage.setItem(storageKey, JSON.stringify(value)),
+  deleteItem: (storageKey, value) => {
+    const newData = storageHandler.getItem(storageKey).filter((item) => item.id === value);
+    storageHandler.setItem(storageKey, newData);
   },
-  filterItem: (key, category, sort, id = "") => {
+  filterItem: (storageKey, category, sort, id) => {
     let restaurantData;
     if (id === "all") {
-      restaurantData = storageHandler.getItem(key);
+      restaurantData = storageHandler.getItem(storageKey);
     } else if (id === "favorite") {
-      restaurantData = storageHandler.getItem(key).filter((item) => item.isFavorite === true);
+      restaurantData = storageHandler.getItem(storageKey).filter((item) => item.isFavorite === true);
     }
     if (!category && !sort) {
-      return restaurantData.reverse().sort((a, b) => a[sort] - b[sort]);
+      return restaurantData.reverse();
     }
     if (!category && sort === "distance") {
-      return restaurantData.sort((a, b) => a[sort] - b[sort]);
+      return restaurantData.sort(
+        (a, b) => a[sort] - b[sort]
+      );
     }
     if (!category) {
       return restaurantData.sort(
@@ -211,28 +205,30 @@ const storageHandler = {
       );
     }
     const categoryData = restaurantData.filter(
-      (item) => item.categoryTitle === category
+      (item) => item.category === category
     );
     if (!sort) {
-      return categoryData.reverse().sort((a, b) => a[sort] - b[sort]);
+      return categoryData.reverse();
     }
     if (sort === "distance") {
-      return categoryData.sort((a, b) => a[sort] - b[sort]);
+      return categoryData.sort(
+        (a, b) => a[sort] - b[sort]
+      );
     }
     return categoryData.sort(
       (a, b) => a[sort].toLowerCase() < b[sort].toLowerCase() ? -1 : 1
     );
   },
-  updateFavorite: (key, restaurantInfo) => {
-    const favoriteData = storageHandler.getItem(key).filter((item) => item.id === restaurantInfo.id);
-    const updateData = storageHandler.getItem(key).map((item) => {
+  updateFavorite: (storageKey, restaurantInfo) => {
+    const favoriteData = storageHandler.getItem(storageKey).filter((item) => item.id === restaurantInfo.id);
+    const updateData = storageHandler.getItem(storageKey).map((item) => {
       if (item.id === restaurantInfo.id) {
         restaurantInfo.isFavorite = !favoriteData[0].isFavorite;
         return restaurantInfo;
       }
       return item;
     });
-    storageHandler.setItem(key, updateData);
+    storageHandler.setItem(storageKey, updateData);
     return favoriteData.length > 0 ? favoriteData[0].isFavorite : null;
   }
 };
@@ -243,17 +239,16 @@ const updateFavoriteIcon = (restaurantInfo, e) => {
     STORAGE_KEY_NAME,
     restaurantInfo
   );
-  const favoriteIcon = e.currentTarget.children[0];
-  const isModalFavoriteIcon = e.currentTarget.parentNode.classList.contains("modal-container");
-  document.querySelector(
-    `.modal-container > .favorite-icon > path:first-of-type`
-  );
+  const target = e.currentTarget;
+  const favoriteIcon = target.children[0];
+  const targetParent = target.parentNode;
+  const isModalFavoriteIcon = targetParent.classList.contains("modal-container");
   if (favoriteState) {
     if (isModalFavoriteIcon) {
       const listFavoriteIcon = document.querySelector(
         `[data-id="${restaurantInfo.id}"] > .favorite-icon > path:first-of-type`
       );
-      listFavoriteIcon.setAttribute("fill", "none");
+      listFavoriteIcon == null ? void 0 : listFavoriteIcon.setAttribute("fill", "none");
     }
     return favoriteIcon.setAttribute("fill", "none");
   }
@@ -261,7 +256,7 @@ const updateFavoriteIcon = (restaurantInfo, e) => {
     const listFavoriteIcon = document.querySelector(
       `[data-id="${restaurantInfo.id}"] > .favorite-icon > path:first-of-type`
     );
-    listFavoriteIcon.setAttribute("fill", "#EC4A0A");
+    listFavoriteIcon == null ? void 0 : listFavoriteIcon.setAttribute("fill", "#EC4A0A");
   }
   favoriteIcon.setAttribute("fill", "#EC4A0A");
 };
@@ -271,7 +266,7 @@ const $favoriteIcon = (isFavorite) => {
     "svg"
   );
   favoriteIcon.classList.add("favorite-icon");
-  favoriteIcon.tabindex = 0;
+  favoriteIcon.tabIndex = 0;
   favoriteIcon.role = "button";
   favoriteIcon.setAttribute("fill", "#EC4A0A");
   const favoriteIconStroke = document.createElementNS(
@@ -298,33 +293,32 @@ const $favoriteIcon = (isFavorite) => {
   favoriteIcon.appendChild(favoriteIconPath);
   return favoriteIcon;
 };
-const ERROR = deepFreeze({
+const ERROR = {
   INVALID_REQUIRED: "(은)는 필수 값입니다.",
   INVALID_URL: "유효한 URL이 아닙니다."
-});
-const USER_MESSAGE = deepFreeze({
+};
+const USER_MESSAGE = {
   CONFIRM_DELETE: "정말로 삭제하시겠습니까? \n삭제하실 경우 다시 복구가 어렵습니다."
-});
+};
+const CATEGORY_ICON = {
+  한식: "images/category-korean.png",
+  중식: "images/category-chinese.png",
+  일식: "images/category-japanese.png",
+  양식: "images/category-western.png",
+  아시안: "images/category-asian.png",
+  기타: "images/category-etc.png"
+};
 const $createRestaurantInfo = (restaurantInfo) => {
-  const {
-    categoryIcon,
-    categoryTitle,
-    description,
-    distance,
-    link,
-    name,
-    id,
-    isFavorite
-  } = restaurantInfo;
+  const { category, description, distance, link, name, id, isFavorite } = restaurantInfo;
   const container = document.querySelector(".modal-container");
-  container.replaceChildren();
-  const category = document.createElement("div");
-  category.classList.add("restaurant__category");
+  container == null ? void 0 : container.replaceChildren();
+  const categoryBox = document.createElement("div");
+  categoryBox.classList.add("restaurant__category");
   const categoryImage = document.createElement("img");
-  categoryImage.src = categoryIcon;
-  categoryImage.alt = categoryTitle;
+  categoryImage.src = CATEGORY_ICON[category];
+  categoryImage.alt = category;
   categoryImage.classList.add("category-icon");
-  category.appendChild(categoryImage);
+  categoryBox.appendChild(categoryImage);
   const InfoName = document.createElement("h3");
   InfoName.classList.add("restaurant__name", "text-subtitle");
   InfoName.textContent = name;
@@ -333,29 +327,30 @@ const $createRestaurantInfo = (restaurantInfo) => {
   InfoDistance.textContent = `캠퍼스부터 ${distance}분 내`;
   const InfoDescription = document.createElement("p");
   InfoDescription.classList.add("restaurant__description", "text-body");
-  InfoDescription.textContent = description;
-  container.appendChild(category);
-  container.appendChild(InfoName);
-  container.appendChild(InfoDistance);
-  container.appendChild(InfoDescription);
-  container.appendChild(InfoDescription);
+  InfoDescription.textContent = description ?? "";
+  container == null ? void 0 : container.appendChild(categoryBox);
+  container == null ? void 0 : container.appendChild(InfoName);
+  container == null ? void 0 : container.appendChild(InfoDistance);
+  container == null ? void 0 : container.appendChild(InfoDescription);
+  container == null ? void 0 : container.appendChild(InfoDescription);
   if (link) {
     const InfoLink = document.createElement("a");
     InfoLink.href = link;
     InfoLink.target = "_blank";
     InfoLink.rel = "noopener noreferrer";
     InfoLink.textContent = link;
-    container.appendChild(InfoLink);
+    container == null ? void 0 : container.appendChild(InfoLink);
   }
   const favoriteIcon = $favoriteIcon(isFavorite);
   favoriteIcon.addEventListener("click", (e) => {
     e.stopPropagation();
     updateFavoriteIcon(restaurantInfo, e);
   });
-  container.appendChild(favoriteIcon);
+  container == null ? void 0 : container.appendChild(favoriteIcon);
   const itemDelete = () => {
+    var _a;
     if (confirm(USER_MESSAGE.CONFIRM_DELETE)) {
-      document.querySelector(`[data-id="${id}"]`).remove();
+      (_a = document.querySelector(`[data-id="${id}"]`)) == null ? void 0 : _a.remove();
       storageHandler.deleteItem(STORAGE_KEY_NAME, id);
     }
     handleModalClose();
@@ -369,18 +364,18 @@ const $createRestaurantInfo = (restaurantInfo) => {
     $button(UI_CONFIG.BUTTONS.DELETE, deleteEvent),
     $button(UI_CONFIG.BUTTONS.CLOSE, closeEvent)
   ]);
-  container.appendChild(deleteCloseButtons);
+  container == null ? void 0 : container.appendChild(deleteCloseButtons);
   handleModalOpen();
 };
-const $restaurantCategory = ({ categoryIcon, categoryTitle }) => {
-  const category = document.createElement("div");
-  category.classList.add("restaurant__category");
+const $restaurantCategory = ({ category }) => {
+  const categoryBox = document.createElement("div");
+  categoryBox.classList.add("restaurant__category");
   const categoryImage = document.createElement("img");
-  categoryImage.src = categoryIcon;
-  categoryImage.alt = categoryTitle;
+  categoryImage.src = CATEGORY_ICON[category];
+  categoryImage.alt = category;
   categoryImage.classList.add("category-icon");
-  category.appendChild(categoryImage);
-  return category;
+  categoryBox.appendChild(categoryImage);
+  return categoryBox;
 };
 const $restaurantInfo = ({ name, distance, description }) => {
   const info = document.createElement("div");
@@ -395,7 +390,7 @@ const $restaurantInfo = ({ name, distance, description }) => {
   info.appendChild(InfoDistance);
   const InfoDescription = document.createElement("p");
   InfoDescription.classList.add("restaurant__description", "text-body");
-  InfoDescription.textContent = description;
+  InfoDescription.textContent = description ?? "";
   info.appendChild(InfoDescription);
   return info;
 };
@@ -437,19 +432,20 @@ const $restaurantList = (restaurantItems) => {
   return noRestaurant;
 };
 const $createRestaurantList = () => {
+  var _a, _b;
   const restaurantContainer = document.querySelector(
     ".restaurant-list-container"
   );
-  restaurantContainer.replaceChildren();
-  const categoryFilter = document.getElementById("category-filter").value || null;
-  const sortFilter = document.getElementById("sorting-filter").value;
+  restaurantContainer == null ? void 0 : restaurantContainer.replaceChildren();
+  const categoryFilter = (_a = document.getElementById("category-filter")) == null ? void 0 : _a.value;
+  const sortFilter = (_b = document.getElementById("sorting-filter")) == null ? void 0 : _b.value;
   const restaurantItems = storageHandler.filterItem(
     STORAGE_KEY_NAME,
     categoryFilter,
     sortFilter,
     document.querySelector(".select-tab-active").id
   );
-  restaurantContainer.appendChild($restaurantList(restaurantItems));
+  restaurantContainer == null ? void 0 : restaurantContainer.appendChild($restaurantList(restaurantItems));
 };
 const $select = ({ attribute, options, eventType, event }) => {
   const select = document.createElement("select");
@@ -517,41 +513,49 @@ const isValidUrl = (url) => {
   return pattern.test(url);
 };
 const validateRestaurantForm = (form) => {
+  var _a, _b, _c, _d;
   if (!form.category.value) {
-    const categoryLabelText = document.querySelector(
+    const categoryLabelText = (_a = document.querySelector(
       `label[for="category"]`
-    ).textContent;
+    )) == null ? void 0 : _a.textContent;
     throw new Error(`${categoryLabelText}${ERROR.INVALID_REQUIRED}`);
   }
-  if (!form.name.value.trim()) {
-    const nameLabelText = document.querySelector(`label[for="name"]`).textContent;
+  const inputEl = form.name;
+  if (!inputEl.value.trim()) {
+    const nameLabelText = (_b = document.querySelector(`label[for="name"]`)) == null ? void 0 : _b.textContent;
     throw new Error(`${nameLabelText}${ERROR.INVALID_REQUIRED}`);
   }
   if (!form.distance.value) {
-    const distanceLabelText = document.querySelector(
+    const distanceLabelText = (_c = document.querySelector(
       `label[for="distance"]`
-    ).textContent;
+    )) == null ? void 0 : _c.textContent;
     throw new Error(`${distanceLabelText}${ERROR.INVALID_REQUIRED}`);
   }
   if (form.link.value && !isValidUrl(form.link.value)) {
-    document.querySelector(`label[for="link"]`).textContent;
-    throw new Error(ERROR.INVALID_URL);
+    const distanceLabelText = (_d = document.querySelector(`label[for="link"]`)) == null ? void 0 : _d.textContent;
+    throw new Error(`${distanceLabelText}${ERROR.INVALID_URL}`);
   }
 };
 const senseChangeRestaurantFormValue = () => {
   try {
-    const form = document.getElementById("add-restaurant-form");
+    const form = document.getElementById(
+      "add-restaurant-form"
+    );
     validateRestaurantForm(form);
-    const submitButton = document.getElementById("addRestaurantButton");
-    submitButton.classList.remove("button--disabled");
+    const submitButton = document.getElementById(
+      "addRestaurantButton"
+    );
+    submitButton == null ? void 0 : submitButton.classList.remove("button--disabled");
     submitButton.disabled = false;
   } catch (error) {
-    const submitButton = document.getElementById("addRestaurantButton");
-    submitButton.classList.add("button--disabled");
+    const submitButton = document.getElementById(
+      "addRestaurantButton"
+    );
+    submitButton == null ? void 0 : submitButton.classList.add("button--disabled");
     submitButton.disabled = true;
   }
 };
-const FORM_FIELDS = deepFreeze({
+const FORM_FIELDS = {
   INPUTS: {
     name: {
       label: "이름",
@@ -638,28 +642,27 @@ const FORM_FIELDS = deepFreeze({
     },
     create: (info) => $textarea(info)
   }
-});
-const CATEGORY_ICON = deepFreeze({
-  한식: "images/category-korean.png",
-  중식: "images/category-chinese.png",
-  일식: "images/category-japanese.png",
-  양식: "images/category-western.png",
-  아시안: "images/category-asian.png",
-  기타: "images/category-etc.png"
-});
+};
 const restaurantFormReset = () => {
   handleModalClose();
-  const form = document.getElementById("add-restaurant-form");
+  const form = document.getElementById(
+    "add-restaurant-form"
+  );
   form.reset();
 };
-const addRestaurant = (data) => {
+const addRestaurant = ({
+  category,
+  name,
+  distance,
+  description,
+  link
+}) => {
   const newRestaurant = {
-    categoryIcon: CATEGORY_ICON[data.category],
-    categoryTitle: data.category,
-    name: data.name,
-    distance: data.distance,
-    description: data.description,
-    link: data.link,
+    category,
+    name,
+    distance,
+    description,
+    link,
     id: /* @__PURE__ */ new Date(),
     isFavorite: false
   };
@@ -670,21 +673,27 @@ const addRestaurant = (data) => {
 const handleAddRestaurant = (e) => {
   e.preventDefault();
   try {
-    const form = document.getElementById("add-restaurant-form");
+    const form = document.getElementById(
+      "add-restaurant-form"
+    );
     const formData = new FormData(form);
     const data = Object.fromEntries(formData);
     validateRestaurantForm(form);
     addRestaurant(data);
-    restaurantFormReset(form);
+    restaurantFormReset();
   } catch (error) {
-    alert(error.message);
-    console.log(error);
+    if (error instanceof Error) {
+      alert(error.message);
+    }
   }
 };
 const $createRestaurantForm = () => {
   const container = document.querySelector(".modal-container");
-  container.replaceChildren();
-  const cancelEvent = { eventType: "click", eventHandler: restaurantFormReset };
+  container == null ? void 0 : container.replaceChildren();
+  const cancelEvent = {
+    eventType: "click",
+    eventHandler: restaurantFormReset
+  };
   const submitCancelButtons = $buttonContainer([
     $button(UI_CONFIG.BUTTONS.CANCEL, cancelEvent),
     $button(UI_CONFIG.BUTTONS.ADD)
@@ -700,9 +709,12 @@ const $createRestaurantForm = () => {
   const title = document.createElement("h2");
   title.classList.add("modal-title", "text-title");
   title.textContent = "새로운 음식점";
-  container.appendChild(title);
-  const submitForm = { eventType: "submit", eventHandler: handleAddRestaurant };
-  container.appendChild($form(restaurantAddForm, submitForm));
+  container == null ? void 0 : container.appendChild(title);
+  const submitForm = {
+    eventType: "submit",
+    eventHandler: handleAddRestaurant
+  };
+  container == null ? void 0 : container.appendChild($form(restaurantAddForm, submitForm));
   handleModalOpen();
 };
 const $headerTitle = ({ title }) => {
@@ -740,12 +752,13 @@ const $filterContainer = (filters) => {
 };
 const activeTabEvent = (id) => {
   const currentActiveTab = document.querySelector(".select-tab-active");
-  currentActiveTab.classList.remove("select-tab-active");
+  currentActiveTab == null ? void 0 : currentActiveTab.classList.remove("select-tab-active");
   const currentClickTab = document.getElementById(id);
-  currentClickTab.classList.add("select-tab-active");
+  currentClickTab == null ? void 0 : currentClickTab.classList.add("select-tab-active");
 };
 const toggleTabClick = (e) => {
-  activeTabEvent(e.target.id);
+  const target = e.target;
+  activeTabEvent(target.id);
   $createRestaurantList();
 };
 const $tabContainer = (tabs) => {
@@ -757,9 +770,9 @@ const $tabContainer = (tabs) => {
   });
   return container;
 };
-const $tab = (tabInfo, tabEvent = {}) => {
+const $tab = (tabInfo, tabEvent) => {
   const { attribute, text } = tabInfo;
-  const { eventType, eventHandler } = tabEvent;
+  const { eventType, eventHandler } = {};
   const tab = document.createElement("button");
   Object.assign(tab, attribute);
   tab.textContent = text;
@@ -778,8 +791,10 @@ addEventListener("load", () => {
     FORM_FIELDS.SELECTS.create(FORM_FIELDS.SELECTS.categoryFilter),
     FORM_FIELDS.SELECTS.create(FORM_FIELDS.SELECTS.sortingFilter)
   ];
-  document.querySelector("main").prepend($filterContainer(filterSelects));
-  document.querySelector("main").prepend(navigationTabs);
-  document.querySelector("main").appendChild($modal());
+  const main = document.querySelector("main");
+  if (main === null) return;
+  main.prepend($filterContainer(filterSelects));
+  main.prepend(navigationTabs);
+  main.appendChild($modal());
   $createRestaurantList();
 });
